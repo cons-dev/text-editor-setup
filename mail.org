@@ -1,0 +1,51 @@
+#+TITLE: Mail Configuration
+
+#+RESULTS:
+* Introduction
+
+This file is my configuration for mail support in my system. It provides a full set of POP/IMAP suport, as well as the 
+
+
+* External Components
+Unfortunately I cannot do everything here in Emacs, so I need to install notmuch and mbsync, as well as configure them for email use.
+
+** Mbsync
+This file serves to configure IMAP support when suitably modified.
+#+BEGIN_SRC config :tangle ../
+
+
+#+END_SRC
+
+
+
+** Starting Services on Initial Setup
+Finally, when starting the system we want this file to configure all components, so we use the tangle feature.
+#+BEGIN_SRC emacs-lisp
+(org-babel-tangle-file "~/Memex/mail.org")
+#+END_SRC
+Once it has been tangled, we can also begin starting the various services, including the mail daemon. This bit of code should execute only if the mbsync service we defined above is not running, which will also run notmuch. Fun!
+#+BEGIN_SRC emacs-lisp
+(shell-command "systemctl is-active --quiet mbsync.service || systemctl --user start mbsync.service" nil nil)
+#+END_SRC
+
+: 0
+
+* internal Components
+** Tagging Mail
+Obviously I like to tag my mail, therefore I have set up a simple system to automatically tag things.
+
+#+BEGIN_SRC emacs-lisp
+
+
+#+END_SRC
+
+** Basic Setup
+
+|   |   |
+|---+---|
+|   |   |
+|   |   |
+
+#+BEGIN_SRC
+
+#+END_SRC

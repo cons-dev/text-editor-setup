@@ -1,0 +1,49 @@
+:PROPERTIES:
+:ID:       f3f7f4fc-09ea-4477-84e4-ca7d4a1aa6c5
+:END:
+#+TITLE: operating-system
+
+* Introduction
+This buffer mostly configures the operating system and its various interfaces. This provides both stuff related to the central functionality of Emacs as a text editor, as well as process management utilities, file exploration, and other such things. It also provides stumpwm.
+
+
+* Dependancies
+| Name | Description |
+|------+-------------|
+|      |             |
+
+* Services
+
+* Directories
+
+* StumpWM
+Instead of using exwm, I also use stumpwm to manage my windows. this is convenient and, moreover, actually pretty useful and fun.
+** Login Manager
+This tangles the login manager assuming no file of that sort has been tangled before.
+#+BEGIN_SRC conf :tangle (if (file-exists-p "/usr/share/xsessions/stumpwm.desktop") "no"  "/sudo::/usr/share/xsessions/stumpwm.desktop")
+ [Desktop Entry]
+Encoding=UTF-8
+Name=StumpWM
+Comment=Login using StumpWM
+Exec=/path/to/stumpwm-binary
+Type=XSession
+#+END_SRC
+
+** StumpWm Init Code
+Belive it or not, I really like it when stumpwm happens to also have the correct init configuration. Shocking, I know.
+*** Startup Code
+#+BEGIN_SRC lisp
+
+#+END_SRC
+*** Emacs Style Keybindings
+Here I just make everything that is not Emacs use Emacs style key bindings. This is because I am a nerd.
+#+BEGIN_SRC lisp
+
+#+END_SRC
+
+** Tangling StumpWM on Startup
+To ensure the startup is consistent, we re-tangle the stumpwm files  with the exception of the desktop entry.
+#+BEGIN_SRC emacs-lisp
+(org-babel-tangle-file "~/Memex/operating-system.org")
+#+END_SRC
+

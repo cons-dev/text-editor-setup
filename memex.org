@@ -1,0 +1,252 @@
+:PROPERTIES:
+:ID:       ce45a2b0-c895-4c73-b65b-aa56bf3e9f76
+:END:
+#+TITLE: memex
+
+* Introduction
+Finally we get to the fun stuff, the setup for my "memex" which is basically the interface to my entire operating system. It defines a basic ontology that I use to understand the world, allowing me to quickly reference objects. It also contains a constraint programming system, which allows for the definition of queries and predicates within the system, giving you the ability to reason across sets of facts.
+
+* Dependencies
+#+NAME: memex-deps
+| Dependency        | Description                             |
+|-------------------+-----------------------------------------|
+| [[https://www.orgroam.com/][org-roam]]          | A wiki system for Emacs.                |
+| [[https://github.com/nickdrozd/reazon][reazon]]            | Logic programming utilitie              |
+| [[https://github.com/alphapapa/org-ql][org-ql]]            | Query language for org mode.            |
+| [[https://plantuml.com/emacs][plantuml-mode]]     | Mode to make PlantUML code look better. |
+| [[https://github.com/ppareit/graphviz-dot-mode][graphviz-dot-mode]] | Make graphviz also look better.         |
+
+#+BEGIN_SRC emacs-lisp :var deps=memex-deps
+(ec-load-deps deps)
+#+END_SRC
+
+* Diagrams
+To display graphs and diagrams, I commonly use graphviz and plantuml, so those are both installed.
+#+BEGIN_SRC emacs-lisp
+(setq graphviz-dot-indent-width 4)
+#+END_SRC
+
+* Org Roam
+I like to use org-roam a lot for personal programming projects, so I have defined a series of simple functions to provide that interface.
+#+BEGIN_SRC emacs-lisp
+(setq org-roam-directory (file-truename "~/Memex"))
+(org-roam-db-autosync-mode)
+#+END_SRC
+
+Overall my plan is for objects to be contained within an ontology starting with higher level items, and continuing to low level items.
+** Interface Hydra
+#+BEGIN_SRC emacs-lisp
+(defhydra memex (global-map "C-c n")
+  "Run a memex command."
+  ("f" org-roam-node-find "find node")
+  ("n" org-roam-capture "create new node")
+  ("s" org-roam-db-sync "re-sync database"))
+#+END_SRC
+
+* Ontology
+The ontology is outlined below, and is designed to contain mentions of various objects. Here this system lies under the ontological category of code. The ontology is based on the basic formal ontology, a popular ontology system. While I don't take a position of ontological realism at all, I do think that formal definitions and structure is useful.
+
+During initial setup the code to define the ontology will be run, and then on successive starts the directories won't be created.
+#+BEGIN_SRC
+(Memex
+ (Continuant
+  ("Independent Continuant"
+   ("Material Entity"
+    "Object"
+    "Object Aggregate"
+    "Flat Object Part")
+   ("Immaterial Entity"
+    "Site"
+    "Spatial Entity"
+    "Continuant Flat Boundry)) 
+#+END_SRC
+
+** Relations
+You can also define relations between ontological entities.
+
+Once this is done, we define our directory to be the "Memex" and make org-ql search it recursively.
+
+#+BEGIN_SRC emacs-lisp
+(setq org-directory "~/Memex")
+(setq org-ql-search-directories-files-recursive t)
+#+END_SRC
+
+
+** Continuant
+*** Indpendent Continuant
+**** Material Entity
+***** Object
+***** Object Aggregate
+***** Flat Object Part
+**** Immaterial Entity
+***** Site
+***** Spatial Entity
+***** Continuant Flat Boundry
+*** Specitically Dependent Continuant
+**** Quality
+***** Relational Data
+**** Realizable Entity
+***** Role
+***** Disposition
+****** Function
+*** Generically Dependent Continuant
+*** Immaterial Entity
+**** Information Content Entity
+***** Mathematical Proof [fn:: Added]
+***** Computer Program [fn:: Added]
+**** Specifically Dependant Continuant
+***** Quantity
+****** Relational Quantity
+***** Realizable Entity
+****** Role
+****** Disposition
+******* Function
+
+** Occurrent
+Occurants are the set of things that are occuring or will occur.
+*** Process
+**** Histroy
+*** Process Boundry
+*** Spatiotemproal Region
+*** Temporal Region
+**** Zero-Dimensional Temporal Region
+**** One Dimensional temporal Region
+
+* Logic Programming
+Unlike previous memex systems, my current one uses a logic programming interface to create and control various files, with editable definitions. This means that files may be tracked, invalidated, and reasoned against.
+
+To do this I use a mixture of org-ql and reazon to create a simple meta-langauge for org-mode. This allows me to extract particulars from a simple BFO based ontology, reason with them, and define extensions to particulars.
+** Language Specification
+Because of how Emacs works, unfortunately I cannot simply allow the user to define facts on the top level. Instead fact definition occcurs on a slightly lower level.
+#+BEGIN_SRC
+(fact ())
+(relat on ())
+(query)
+#+END_SRC
+** Facts
+To define a fact you simply define a headline with some name and then follow it with a series of paragraphs or lists. The results will be considered an ordered list with a given fact name.
+#+BEGIN_SRC org
+,* My Fact
+# a simple string
+From the above fact we can conclude some things.
+- some data in a list
+- some further data, also in a list
+# a number that will be parsed as such
+- 12
+# something that will be parsed as a cons cell of (key . value)
+- some data :: some more data 
+
+#+END_SRC
+
+However, this is not the only way to define a fact! In fact, one can define facts at the top levels of a file. Therefore, a fact can comprise multiple objects. For example.
+#+BEGIN_SRC org
+,#+TITLE: My Fact
+From the above we can conclude some things.
+
+
+#+END_SRC
+
+** Relations
+Obviously you might not want to just use goals, so you can also define relations between facts in our language. Therefore there is a simple expression for that.
+#+BEGIN_SRC
+,* My Relation
+,** My Fact
+- some bit of data
+- another bit of data
+,** My Related Fact
+
+,** Not My Related Fact
+ 
+#+END_SRC
+As you can see, the relation (and all disjunctions and operations on it) also take the form of an org-mode structure similar to the first. However, relations add the special ? syntax, allowing for disjunctions and further logical relations beyond the obvious.
+
+** Human-In-the-Loop Operation
+But let's say you happen to have some sort of problem that is not possible ot fully formlaize, but you still want to use logic programming to conduct reasoning on the components that can be formally defined. In such a case you might define a logical system with input / output methods. When updating it will query you for inputs to continue the operation of the system.
+
+To do so consider the definiton of the predicate.
+#+BEGIN_SRC org
+
+#+END_SRC
+
+** Sets and Ontological Categories
+Finally, you can also consider the elements of a predicate to be within an ordered set. That is to say while there is a well ordering, only one element of each exists. When considering ontological categories, the well ordering is alphabetical, and each category is a set of its subcategories, as well as all elements within each subcategory.
+
+To examine what this means for the language, consider the question of if a computer program is "generically dependent continuant". The answer is obviously yes. For the higher ontological category exists above the concept of a program.
+
+However, ontological categories are not themselves facts like regular predicates are, but are rather defined as follows (using prolog).
+#+BEGIN_SRC prolog
+In(category_a, category_b)
+IsA(p, q) :- In(p, q); IsA(p, ?r), In(?r, q).
+#+END_SRC
+Therefore, one may define $P$ as being a $Q$ IFF $P \in Q \or P \in x \in Q$.
+
+** Queries
+Finally, you mighta ctually want to include a bit of data from a collection of relations in another function. To do this you can use a query, which will return a collection of relations in a special block. This allows you to define, for example.
+
+** Transactions
+Finally, the system does not alwyas run, but rather operates when you specify a transaction.
+
+** Practical Applications
+Now you may wonder, why would you want this in a note taking setup? It seems complicated (I mean, it is). Well, the answer is that logic programming is tremendously /useful/ for various scientific and other applications.
+
+
+* Org Mode
+** Replace Bullets
+This effectively hides all of the org bullets and indents all org blocks, giving me a tree structure wtih the informational value of numbering and without the visual noise of stars.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook (lambda () (org-num-mode 1)))
+(add-hook 'org-mode-hook (lambda () (org-indent-mode 1)))
+(defun ec-org-mode-remove-stars ()
+  (font-lock-add-keywords
+   nil
+   '(("^\\*+ "
+      (0
+       (prog1 nil
+         (put-text-property (match-beginning 0) (match-end 0)
+                            'invisible t)))))))
+
+(add-hook 'org-mode-hook #'ec-org-mode-remove-stars)
+#+END_SRC
+** UI Improvemnts
+I also want to improve the UI a bit, so I add some stuff to fix problems I have, namely that the tab key doesn't alwyas cycle things.
+#+BEGIN_SRC emacs-lisp
+(setq org-cycle-emulate-tab nil)
+(setq org-src-preserve-indentation t)
+#+END_SRC
+
+** Main Index
+We also want there to be a main index, and to create that main index should the system not.
+#+BEGIN_SRC org :tangle (if (file-exists-p "~/Memex/main-index.org") "no"  "~/Memex/main-index.org")
+:PROPERTIES:
+:ID:       49d9e34b-066b-45e9-ae62-c8ce713dca1c
+:END:
+,#+TITLE: Main Index
+
+,* Introduction
+This is the main index of your Memex, where you can operate the system and obtain important KPIs.
+
+,* Key Performance Indicators
+- time on task ::
+- tickets closed ::
+#+END_SRC
+
+Then we set the buffer
+#+BEGIN_SRC emacs-lisp
+(setq initial-buffer-choice "~/Memex/main-index.org")
+#+END_SRC
+Finally, we tangle the file.
+#+BEGIN_SRC emacs-lisp
+(org-babel-tangle-file "~/Memex/emacs-config/memex.org")
+#+END_SRC
+
+** Org Babel Configuration
+#+BEGIN_SRC emacs-lisp
+(setq org-confirm-babel-evaluate nil)
+(require 'ob-clojure)
+(require 'ob-python)
+(require 'ob-css)
+(require 'ob-dot)
+(require 'ob-plantuml)
+#+END_SRC
+
+#+RESULTS:

@@ -1,0 +1,140 @@
+:PROPERTIES:
+:ID:       7be6f49a-1328-4f6f-b4e9-acce4c437cb0
+:END:
+#+TITLE: Programming
+
+* Dependencies
+#+NAME: deps
+| Dependency   | Description                                  |
+|--------------+----------------------------------------------|
+| [[https://github.com/Wilfred/helpful][helpful]]      | Adds helpful popups for emacs lisp.          |
+| [[https://www.flycheck.org/en/latest/][flycheck]]     | Adds a better linter to Emacs.               |
+| [[https://github.com/emacs-lsp/lsp-mode][lsp-mode]]     | Language servers for emacs.                  |
+| [[https://github.com/emacs-lsp/dap-mode][dap-mode]]     | Adds debuggers to everything with common UI. |
+| [[https://github.com/brotzeit/rustic][rustic]]       | Improved rust programming UX.                |
+| [[https://github.com/clojure-emacs/clojure-mode][clojure-mode]] | Adds basic clojure editing.                  |
+| [[https://github.com/clojure-emacs/cider][cider]]        | Better REPL integration with Clojure.        |
+| [[https://github.com/ethan-leba/tree-edit][tree-edit]]    | Structured editing for everything.           |
+| [[https://github.com/Fuco1/smartparens][smartparens]]  | Make parens nicer.                           |
+| [[https://magit.vc/][magit]]        | A much nicer git UI.                         |
+| [[https://github.com/magit/forge][forge]]        | Makes accessing git forges easier.           |
+| scss-mode    |                                              |
+
+#+BEGIN_SRC emacs-lisp :var deps=deps 
+(ec-load-deps deps)
+#+END_SRC
+
+* Linters and Debuggers
+** LSP Mode
+We make it so that lsp-mode's documentation popup is always used... unless of course we happen to be using clojure, at which point it does nothing.
+#+BEGIN_SRC emacs-lisp
+(bind-key (kbd "C-c C-d") 'lsp-describe-thing-at-point 'lsp-mode-map
+	  (lambda () (eq major-mode 'clojure-mode)))
+#+END_SRC
+
+** Debug Adaptor Protocol
+As with any other programmer I feel the urge to debug things sometimes. So I have added a little code to include the excellent dap-mode in emacs.
+#+BEGIN_SRC emacs-lisp
+(add-hook 'dap-stopped-hook
+            (lambda (arg) (call-interactively #'dap-hydra)))
+#+END_SRC
+
+** Flycheck
+#+BEGIN_SRC
+
+#+END_SRC
+
+* Structure Editing
+The structure editing interface comrpises a collection fo key bindings that allow for (hopefully seamless) structure editing for a variety of languages, including org-mode files. The functions are as follows:
+| chord         | function                                               |
+|---------------+--------------------------------------------------------|
+| ~C-f~         | Goes forwards a node.                                  |
+| ~C-b~         | Goes backwards a node.                                 |
+| ~C-n~         | Steps into a selected node, edits if it is a terminal. |
+| ~DEL~         | Steps out of the currently selected node.              |
+| ~C-p~         | Kills the currently selected node                      |
+| ~C-M-<right>~ | Moves right                                            |
+| ~C-M-<left>~  | Moves Left                                             |
+|               |                                                        |
+
+
+** Tree Sitter Supported Languages
+
+*** Moving
+
+*** Highlighting
+
+** Lisp Like Languages
+For the things that tresitter does not do (probably because they are trivial), there is the trusty smartparens package and a colleciton of functions that produce the standard interface for structure editing.
+*** Moving
+When using lisp like
+
+*** Highlighting
+I also like to subtly highlight the section of code I am currently working on. This has the effect of making that section more obvious without adjusting the character width or conflicting with my syntax highlihgting.
+#+BEGIN_SRC emacs-lisp
+(setq show-paren-style 'expression)
+(show-smartparens-global-mode +1)
+#+END_SRC
+
+** Org Mode
+
+*** Moving
+*** Highlighting
+
+* Languages
+Now we actually define the interfaces for individual languages. But to start out we must sort of define a unified interface. You see, it is not sufficent to merely define a set of keys that are to be used, but rather
+** Emacs Lisp
+Naturally, on of the languages I use is emacs lisp. Therefore I have an extensive featureset to work with it, adding macroexpansion and other utilities.
+#+BEGIN_SRC emacs-lisp
+(setq counsel-describe-function-function #'helpful-callable)
+(setq counsel-describe-variable-function #'helpful-variable)
+;; Lookup the current symbol at point. C-c C-d is a common keybinding
+;; for this in lisp modes.
+(bind-key (kbd "C-c C-d") #'helpful-at-point 'emacs-lisp-mode-map)
+
+
+;; Look up *F*unctions (excludes macros).
+;;
+;; By default, C-h F is bound to `Info-goto-emacs-command-node'. Helpful
+;; already links to the manual, if a function is referenced there.
+(global-set-key (kbd "C-h F") #'counsel-describe-function)
+
+;; Look up *C*ommands.
+;;
+;; By default, C-h C is bound to describe `describe-coding-system'. I
+;; don't find this very useful, but it's frequently useful to only
+;; look at interactive functions.
+(global-set-key (kbd "C-h C") #'helpful-command)
+
+
+(defhydra emacs-help-menu (global-map "C-h")
+  "Help Menus"
+  ("f" counsel-describe-function "describe function")
+  ("v" counsel-describe-variable "describe variable"))
+#+END_SRC
+
+** Rust
+For rust I have a little setup based upon rustic, which is a common, and fairly advanced, Rust development toolkit.
+#+BEGIN_SRC emacs-lisp
+(require 'rustic-ob)
+#+END_SRC
+** Clojure
+Here I add some clojure  tools, focused on things like macroexpansion and other utilities. It also continues with my unified interface.
+#+BEGIN_SRC emacs-lisp
+(bind-key (kbd "C-c C-d") #'cider-browse-ns-doc-at-point 'clojure-mode-map)
+(setq cider-connection-message-fn #'cider-random-tip)
+(setq nrepl-hide-special-buffers t)
+(setq cider-font-lock-dynamically '(macro core function var))
+(setq cider-eldoc-display-context-dependent-info t) ;; make it display more info
+#+END_SRC
+
+** Prolog
+I actually use prolog sometimes for experimenting, and use a variety of different systems implementations, largely for fun.
+#+BEGIN_SRC
+
+#+END_SRC
+
+* Version Control
+** Magit
+The classic, magical user interface. Magit provides a simple UI system for writing comments in
+** Forge

@@ -1,0 +1,261 @@
+:PROPERTIES:
+:ID:       a00541a1-b0f0-493d-b325-590b65022115
+:END:
+#+TITLE: user-interface
+#+PROPERTY: header-args: :noweb tangle
+
+* Introduction
+This is the code that defines all user interfaces except for those directly related to my [[id:ce45a2b0-c895-4c73-b65b-aa56bf3e9f76][memex]] or 
+
+* Dependencies
+#+NAME: deps
+| Dependency         | Description                                 |
+|--------------------+---------------------------------------------|
+| [[https://github.com/doomemacs/themes][doom-themes]]        | A package for creating and using themes.    |
+| [[https://github.com/seagle0128/doom-modeline][doom-modeline]]      | Modelines for doom emacs.                   |
+| [[https://github.com/hlissner/emacs-solaire-mode][solaire-mode]]       | Changes colors on non-file buffers.         |
+| [[https://github.com/abo-abo/swiper][ivy]]                | Improves a lot of the UI features of Emacs. |
+| [[https://github.com/abo-abo/swiper][counsel]]            | Adds improved UI customizations.            |
+| [[https://github.com/abo-abo/swiper][swiper]]             | Better search engine.                       |
+| [[https://github.com/Yevgnen/ivy-rich][ivy-rich]]           | Adds comments to ivy functions.             |
+| [[https://github.com/tumashu/posframe][posframe]]           | Dependency for posframe functions.          |
+| [[file:ivy-posframe.org][ivy-posframe]]       | Adds posframe popups to Ivy.                |
+| [[https://github.com/abo-abo/hydra][hydra]]              | Adds hydras, nice looking UI popups.        |
+| [[file:hydra-posframe.org][hydra-posframe]]     | POS-ifys hydras.                            |
+| [[https://github.com/justbur/emacs-which-key][which-key]]          | Tell me what the keys do.                   |
+| [[https://github.com/jlr/rainbow-delimiters][rainbow-delimiters]] | Make delimeters pretty.                     |
+| [[https://github.com/abo-abo/ace-window][ace-window]]         | Better jumping between windows.             |
+| [[https://github.com/d12frosted/flyspell-correct#readme][flyspell-correct]]   | A good, very effective spell checker.       |
+
+#+BEGIN_SRC emacs-lisp :var deps=deps
+(ec-load-deps deps)
+#+END_SRC
+
+#+RESULTS:
+| doom-themes | doom-modeline | solaire-mode | ivy | counsel | swiper | ivy-rich | posframe | ivy-posframe | hydra | hydra-posframe | which-key | rainbow-delimiters | ace-window | flyspell-correct |
+
+* General UI Improvements
+** Ivy Mode
+I like to use ivy-mode to make my text editor feel better and be more useful, so I add it.
+#+BEGIN_SRC emacs-lisp
+(setq ivy-height 20)
+(ivy-mode)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+** Ivy Posframe
+
+#+NAME: ivy-posframe-vars
+| Variable                             | Value | Description                                 |
+|--------------------------------------+-------+---------------------------------------------|
+| ivy-posframe-min-height              | nil   |                                             |
+| ivy-posframe-height                  | nil   |                                             |
+| ivy-posframe-min-width               | 100   | Makes the width of the posframe reasonable. |
+| ivy-posframe-border-width            | 5     |                                             |
+
+Now that we have the variables, we can actually set everything up with reckless abandon.
+#+BEGIN_SRC emacs-lisp :var vars=ivy-posframe-vars
+(ec-set-variables vars)
+
+(setq ivy-posframe-display-functions-alist
+      '((swiper-isearch          . ivy-posframe-display-at-window-bottom-left)
+	(ec-searcan auditory bell, soh-interactively . ivy-posframe-display-at-window-bottom-left)
+	(w3m-browse-url          . ivy-posframe-display-at-window-bottom-left)
+	(flyspell-correct-ivy    . ivy-posframe-display-at-point)
+	(t                       . ivy-posframe-display)))
+
+(setf (alist-get 'ivy-completion-in-region ivy-posframe-display-functions-alist)
+      'ivy-posframe-display-at-point)
+
+(setq ivy-posframe-height ivy-height)
+
+;; size it to the same thing as ivy posframe each time
+(setq ivy-posframe-size-function
+      (defun ivy-posframe-get-size+ ()
+        (if (eq ivy--display-function
+                'ivy-posframe-display-at-point)
+            (list
+             :min-height ivy-posframe-height
+             :min-width 80)
+          (list
+           :min-height ivy-posframe-height
+           :min-width (+ 2 (frame-width))))))
+
+(ivy-posframe-mode +1)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+Finally, we also include hydra-posframe related features, which makes our hydras look nicer.
+#+BEGIN_SRC emacs-lisp :tangle t
+(setq hydra-posframe-border-width 5)
+(hydra-posframe-mode +1)
+#+END_SRC
+
+#+RESULTS:
+: t
+
+** Ace Window
+This first sets the primary key to ~M-o~, which makes it easier to jump about.
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "M-o") 'ace-window)
+#+END_SRC
+Then I also change the keys ot be alphanumeric.
+#+BEGIN_SRC emacs-lisp
+(setq aw-keys '(?a ?b ?c ?d ?e ?f ?g ?h ?i ?j ?k ?l ?m ?n ?o ?p ?q ?r ?s ?t ?u ?v ?w ?x ?y ?z))
+#+END_SRC
+
+** Flyspell
+#+BEGIN_SRC emacs-lisp
+(define-key flyspell-mode-map (kbd "C-:") 'flyspell-correct-previous)
+(add-hook 'org-mode-hook #'flyspell-mode)
+(add-hook 'prog-mode-hook #'flyspell-mode)
+#+END_SRC
+
+#+RESULTS:
+: flyspell-correct-word-before-point
+
+there is no reazon
+#+RESULTS:
+: flyspell-correct-word
+
+* Coding UI Improvements
+** Rainbow Delimiters
+Navagating lisp sucks with a simple sea of parens, so let's break that up into a sea of subtly different colored parens.
+#+BEGIN_SRC emacs-lisp
+(setq rainbow-delimiters-max-face-count 2)
+(add-hook 'prog-mode-hook (lambda () (rainbow-delimiters-mode +1)))
+(rainbow-delimiters-mode +1)
+#+END_SRC
+
+* Default Configuration Improvements
+To make the Emacs configuration a little more modern (and minimal) I remove the scrollbar, splash screens, and set the mini-window height.
+#+BEGIN_SRC emacs-lisp
+;; Remove Scrollbar
+(scroll-bar-mode -1)
+;; Remove Tool Bar
+(tool-bar-mode -1)
+;; Remove Menubar
+(menu-bar-mode -1)
+;; Remove Tooltips
+(tooltip-mode -1)
+
+;; add visual lines for everything
+(global-visual-line-mode t)
+
+;; wrap words, but also kill the entire line
+(setq-default word-wrap t)
+
+;; y or n instead of yes or no
+(fset 'yes-or-no-p 'y-or-n-p)
+
+;; make the cursor a bar, which is more modern
+(setq-default cursor-type '(bar . 2))
+#+END_SRC 
+
+
+#+NAME: basic_vars
+| Variable                           | Value              | Description                                   |
+|------------------------------------+--------------------+-----------------------------------------------|
+| max-mini-window-height             | 1.0                | Make minibuffer height reasonable.            |
+| inhibit-startup-message            | t                  | Clear away startup nonsense.                  |
+| inhibit-startup-screen             | t                  | ''                                            |
+| inhibit-splash-screen              | t                  | ''                                            |
+| inhibit-compacting-font-caches     | t                  | I have the RAM, I can take more memory usage. |
+| mouse-yank-at-point                | t                  | Make mouse paste at point.                    |
+| widget-image-enable                | nil                | No more ugly buttons.                         |
+| x-underline-at-descent-line        | t                  | Underline line at descent position.           |
+| left-fringe-width                  | 1                  | Make fringes more manageable.                 |
+| right-fringe-width                 | 1                  | ''                                            |
+| window-divider-default-right-width | 10                 | Make dividers drag-able but small.            |
+| line-spacing                       | nil                | Eliminate line spacing, I don't like it.      |
+| use-dialog-box                     | nil                | Kill the dialog boxes, I don't like them.     |
+| find-file-visit-truename           | t                  | Remove absurd file names.                     |
+| mouse-wheel-scroll-amount          | '(1 ((shift) . 1)) | Make scrolling consistent.                    |
+| mouse-wheel-progressive-speed      | t                  | ''                                            |
+| mouse-wheel-follow-mouse           | t                  | ''                                            |
+| scroll-step                        | 1                  | ''                                            |
+
+#+BEGIN_SRC emacs-lisp :var vars=basic_vars
+(ec-set-variables vars)
+#+END_SRC
+
+* Startup Configuration
+** Scratch Buffer
+This makes a nice scratch buffer with links to the documentation for saving it, has some code for elisp, and so on.
+#+NAME: scratch-buffer
+#+BEGIN_SRC org 
+,#+TITLE: Scratch Buffer
+This is the scratch buffer, write whatever you want here. It won't be saved unless you enter the [[help:save-buffer][save-buffer]] command using \[save-buffer].
+
+,#+BEGIN_SRC emacs-lisp
+;; You can also write code here.
+
+,#+END_SRC
+#+END_SRC
+
+And then we set the scratch buffer so it starts up with it.
+#+BEGIN_SRC emacs-lisp :var scratch-buffer=scratch-buffer
+(setq initial-scratch-message scratch-buffer)
+(setq initial-major-mode 'org-mode)
+#+END_SRC
+
+* Theme Config
+** Bell 
+I like both having a visual bell and an auditory bell, so I have this function which makes a nice beep and blinks the modeline.
+#+BEGIN_SRC emacs-lisp
+(defun ec-bell-function ()
+  (exec-shell-command "play -n synth 0.1 sin 500 chorus 1 0.9 55 0.4 0.1 2 -t") 
+  (doom-themes-visual-bell-fn))
+#+END_SRC
+** Vars
+Here some vars are defined.
+#+NAME: var-themes
+| Variable                             | Value              |
+|--------------------------------------+--------------------|
+| doom-themes-enable-bold              | t                  |
+| doom-themes-enable-italic            | t                  |
+| doom-themes-org-fontify-special-tags | nil                |
+| ring-bell-function                   | #'ec-bell-function |
+| custom-theme-directory               | (f-expand "./")    |
+#+TBLFM: 
+#+BEGIN_SRC emacs-lisp :var vars=var-themes
+(ec-set-variables vars)
+#+END_SRC
+
+#+RESULTS:
+| t | t | nil | ec-bell-function | /home/alexandra/Memex/emacs-config/ |
+(use-package helpful)
+** Fixing Backup Files
+One of the most annoying features of Emacs is that it dumps backup and autosave files everywhere. This eliminates that.
+#+BEGIN_SRC emacs-lisp
+(defun ec-backup-file-name (fpath)
+  "Return a new file path of a given file path.
+If the new path's directories does not exist, create them."
+  (let* ((backup-root-dir "~/.emacs.d/emacs-backups/")
+         (file-path (replace-regexp-in-string "[A-Za-z]:" "" fpath ))
+         (backup-file-path (replace-regexp-in-string "//" "/" (concat backup-root-dir file-path "~") )))
+    (make-directory (file-name-directory backup-file-path) (file-name-directory backup-file-path))
+    backup-file-path))
+
+(setq make-backup-file-name-function 'ec-backup-file-name)
+(setq auto-save-default nil)
+#+END_SRC
+
+** Theme Loading
+Finally, we actually tangle and load [[file:econf-theme.org][the theme file]].
+#+BEGIN_SRC emacs-lisp
+(doom-modeline-mode +1)
+(solaire-mode +1)
+ (let ((econf-out "econf-theme.el"))
+   (doom-themes-org-config)
+					;  (org-babel-tangle-file "econf-theme.org" econf-out "emacs-lisp\\|elisp")
+   (load-theme 'econf t)
+   ;; (delete-file econf-out)
+   )
+
+					;  (org-babel-tangle-file "~/Memex/emacs-config/econf-theme.org" "~/Memex/emacs-config/econf-theme.el" "emacs-lisp\\|elisp")
+#+END_SRC

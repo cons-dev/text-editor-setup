@@ -1,0 +1,7 @@
+:PROPERTIES:
+:ID:       4d15c479-daa2-48b4-8590-1287a441c4f8
+:END:
+#+TITLE: Transient Posframe
+
+* Introduction
+A file for transient posframe entities in the Emacs configuration system.

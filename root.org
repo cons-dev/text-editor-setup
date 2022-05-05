@@ -1,0 +1,97 @@
+:PROPERTIES:
+:ID:       b6d4e3b4-8bcb-4be8-941c-93f4b6fcca77
+:END:
+#+TITLE: Emacs Configuration
+
+* Introduction
+I like Emacs, but slowly I have accumulated around 15 000 lines of code written in Emacs lisp in my personal configuration. I have also added (some) unit tests and broke it into a file tree. This works rather well, but this is also sort of limited and troublesome as it expanded.
+
+This will basically comprise the public section of my Emacs configuration. Currently there's not too much here.
+
+* Components
+Here's a quick listing of th evarious components to my setup.
+
+#+NAME: deps-list
+| Component      |                                          |
+|----------------+------------------------------------------|
+| [[file:user-interface.org][user-interface]] | The basic UI for my emacs configuration. |
+| [[file:memex.org][memex]]          | The wiki and heart of my system.         |
+| [[file:programming.org][programming]]    | Software development utilities.          |
+
+* Fancy Loading
+This is currently a work in progress, but basically it provides a fancy function that uses tables in org-mode buffers to define certain common tasks such as variable assignment or dependency specification for a file.
+
+** org-babel-execute:org
+ I like to occasionally include org-mode blocks as variables for my configuration (mostly for templates) so I have written a little function that basically just returns a string containing the body. 
+
+#+BEGIN_SRC emacs-lisp
+(defun org-babel-execute:org (body params)
+    body)
+#+END_SRC
+#+RESULTS:
+: org-babel-execute:org
+
+** ec-load-deps
+ Generally I like to declare my dependencies in a table at the start of my file (as you can see above) because it allows me to link to them, have commentary on what they do, and generally looks nicer than a list of strings. However, to make this possible I need to process the list a little bit.
+
+Eventually I might add a system to lazy-load them (presumably with an extra column as flag to indicate it), but for now this will do.
+
+This also returns a list of the loaded dependencies to allow me to wrap the loaded code within a greater literate loading interface.
+#+BEGIN_SRC emacs-lisp
+  (defun ec-load-deps (deps-list)
+    "Load dependencies from DEPS-LIST."
+    (setq lexical-binding t) ;; make the file have lexical binding when it loads
+    (let ((link-contents-rx (rx (or (seq "[" (or (seq "id:" (* (any "-" "0-9" "a-f")))
+						 (seq "https://" (* (or "." (not "]"))))
+						 (seq "file:" (* (or "." (not "]"))))) "]")
+				    "[" "]"))))
+      (->> deps-list
+	(-map 'car)
+	(-map (lambda (dep)
+		(let ((stripped-dep (s-replace-regexp link-contents-rx "" dep)))
+		  (if (s-matches? (rx (or "https://" "http://")) dep)
+		      (progn (eval `(use-package ,(intern stripped-dep))) stripped-dep)
+		    (progn (org-babel-load-file (format "~/Memex/emacs-config/%s.org" stripped-dep))
+			   (delete-file  (format "%s.el" stripped-dep)) ;; immediately delete file once I am done with it 
+			   stripped-dep))))))))
+#+END_SRC
+
+#+RESULTS:
+: ec-load-deps
+
+** ec-set-variables
+ This parses the contents of a table to a series of setq statements which will be joined together into a function that is then evaluated.
+#+BEGIN_SRC emacs-lisp
+(defun ec-set-variables (vars-list)
+  (-map (lambda (v)
+          (let ((val (cadr v)))
+            (set (read (s-replace "~" "" (car v)))
+                 (if (eq (type-of val) 'string)
+                     (eval (read (s-replace "~" ""  val)))
+                   val))))
+        vars-list))
+#+END_SRC
+
+#+RESULTS:
+: ec-set-variables
+
+** ec-bind-keys
+ Another function for processing tables, in this case binding keys in the tables. 
+#+BEGIN_SRC emacs-lisp
+(defun ec-bind-keys (bindings-list keymap)
+   (-map (lambda (p) (bind-key (kbd (car p)) (intern (cadr p)) keymap)) bindings-list))
+#+END_SRC
+
+#+RESULTS:
+: ec-bind-keys
+
+* Initialization Code
+We also make sure babel doesn't ask us to evaluate stuff, since we /will/ use the tangeling features.
+#+BEGIN_SRC emacs-lisp
+(setq org-confirm-babel-evaluate nil)
+#+END_SRC
+
+Now we simply initialize the dependencies.
+#+BEGIN_SRC emacs-lisp :var deps=deps-list
+(ec-load-deps deps)
+#+END_SRC

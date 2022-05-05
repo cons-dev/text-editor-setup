@@ -1,0 +1,173 @@
+:PROPERTIES:
+:ID:       754bf6cb-604f-4317-b900-3bc1eb40bef4
+:END:
+#+TITLE: Initial Setup
+
+* Introduction
+This is the initial, one-time setup for emacs. This is used to initially install all functions and make the system run.
+
+To actually run the startup installation, run "initial-startup.sh", which will update the system and install emacs, which will install everything else automatically.
+
+* Script
+Here we define our little script for setting up our system.
+** Git Setup
+This sets up my github to use my public email [fn:: Or, rather, email used for my website which I think is probably going to be swamped with spam lol] and my name.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+git config --global user.email "spam@cons.dev"
+git config --global user.name "Alexandra Miller"
+#+END_SRC
+** TODO Basic Ontology Setup
+The upper level ontology is defined. this has a strucutre inspired by the basic foraml ontology.
+
+- NOTE :: This is not implemented yet, I need to look at BFO more to get a good idea on how to do it.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+mkdir -p ~/Memex/emacs-configuration
+cp -r ./* ~/Memex/emacs-configuration
+#+END_SRC
+
+** Font Installation
+I also have a set of fonts that I like. To use them I copy them into th right folder. This is done because, unfortunately, I cannot just download them automatically.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+mkdir ~/.fonts
+cp -r ./fonts/* ~/.fonts/
+#+END_SRC
+
+** Emacs Installation
+This initially installs our basic emacs configuration, which is pretty important for the rest of the system to function.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+sudo snap install emacs --edge --classic
+cp ./fonts/* ~/.local/share/fonts
+#+END_SRC
+
+We also define a startup file for Emacs, which will go in our main directory. However, on startup it will not be possible to tangle it, therefore, we tangle it to the local directory in the git repo, so it (just like the script) can be run trivially.
+#+BEGIN_SRC emacs-lisp :tangle emacs.el
+;; Debug on error for startup
+(toggle-debug-on-error +1)
+
+;; compile everything
+(setq comp-deferred-compilation nil)
+
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+(setq package-enable-at-startup nil)
+
+;; install use-package
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
+
+;; load deps
+(use-package dash)
+
+(use-package s)
+(use-package f)
+(cd "~/Memex/emacs-config/")
+(org-babel-load-file "~/Memex/emacs-config/root.org")
+(cd "~/Memex")
+
+;; turn off debug now that everything works (hopefully)
+(toggle-debug-on-error -1)
+#+END_SRC
+
+And, of course, we also copy it to the right directory.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+cp emacs.el ~/.emacs.el
+#+END_SRC
+
+** Programming Langauges
+Since I program, it is kind of important that I install some programming languages.
+
+*** Prolog 
+Prolog is very easy to install
+#+BEGIN_SRC sh :tangle initial-setup.sh
+if ! command -v pip &> /dev/null
+then
+    sudo apt-get install swi-prolog
+    swipl -g 'pack_install(lsp_server).'
+fi
+#+END_SRC
+
+*** Lisp
+Lisp, well, not emacs or Clojure lisp, also needs to be downloaded and installed on the system.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+if ! command -v ros &> /dev/null
+then
+sudo apt-get -y install git build-essential automake libcurl4-openssl-dev
+git clone -b release https://github.com/roswell/roswell.git
+cd roswell
+sh bootstrap
+./configure
+make
+sudo make install
+ros setup
+fi
+#+END_SRC
+
+*** Rust
+#+BEGIN_SRC sh  :tangle initial-setup.sh
+if ! command -v pip &> /dev/null
+then
+    curl  -sSf https://sh.rustup.rs | sh
+    rustup component add rls rust-analysis rust-src clippy
+fi
+#+END_SRC
+
+*** Python
+Python is also fairly easy to install, and we do that here, installing it and pip. Following that, we add
+#+BEGIN_SRC sh :tangle initial-setup.sh
+if ! command -v pip &> /dev/null
+then
+    sudo apt-get install python pip
+    pip install python-lsp-server
+fi
+#+END_SRC
+
+*** Clojure
+#+BEGIN_SRC sh :tangle initial-setup.sh
+if ! command -v lein &> /dev/null
+then
+    wget "https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein" -O ~/bin/lein
+    chmod a+x ~/bin/lein
+    lein
+    sudo bash < <(curl -s https://raw.githubusercontent.com/clojure-lsp/clojure-lsp/master/install)
+fi
+#+END_SRC
+
+*** UML and Dot
+DOT is also a language I use a lot for diagrams, and UML is great for describing programming stuff, so I tangle both of them.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+if ! command -v dot &> /dev/null
+then
+    sudo apt-get install graphviz
+    sudo apt-get install plantuml
+fi
+#+END_SRC
+
+*** JavaScript Stuff
+#+BEGIN_SRC sh
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
+source ~/.bashrc
+nvm install v16.15.0
+npm install -g sass
+npm install -g vscode-css-languageserver-bin
+#+END_SRC
+
+* Installing Stumpwm
+Now we install stumpwm, my favorite window manager.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+ros install stumpwm
+#+END_SRC
+* Starting Emacs
+Finally, I start Emacs, which will pre-compile the rest of the system and get it set up, also installing the "all-the-icons" fontsets.
+#+BEGIN_SRC sh :tangle initial-setup.sh
+emacs --batch --eval="(progn (load-file ".emacs.el") (all-the-icons-install-fonts))"
+#+END_SRC
